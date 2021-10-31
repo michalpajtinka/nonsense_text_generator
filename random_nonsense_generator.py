@@ -1,14 +1,27 @@
 def get_syllable():
-    pass
+        """
+        generates random syllable
+        """
+        pass
 
 def get_word():
-    pass
+        """
+        generates word by joining random number of syllables
+        """
+        pass
 
 def get_sentence():
-    pass
+        """
+        generates sentence by joining random number of words
+        """
+        pass
 
 def start():
-    pass
+        """
+        prints random sentences to output in neverending loop
+        """
+        pass
+
 
 if __name__ == "__main__":
     start()
