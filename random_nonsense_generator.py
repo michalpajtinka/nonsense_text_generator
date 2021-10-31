@@ -14,13 +14,14 @@ def get_sentence():
         """
         generates sentence by joining random number of words
         """
-        pass
 
 def start():
         """
         prints random sentences to output in neverending loop
         """
-        pass
+        while True:
+                for c in get_sentence():
+                        print(c, end="")
 
 
 if __name__ == "__main__":
