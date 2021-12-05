@@ -1,4 +1,5 @@
 # Nonsense Text Generator
-python script generating meaningless (but still similar to real text) clusters of  letters
 
-Created for educational purposes. Runs in neverending loop, use CTRL+C terminal command to terminate the script.
+Python script generating **meaningless** clusters of letters (usable as *LOREM IPSUM*). Syllable patterns usaed are very loosely inspired by slavic languages. Use -s flag to specify how many sentences should be generated (42 is the default number).
+
+**Created for educational purposes!**
