@@ -41,47 +41,111 @@ class WeightedElementsCollectionCache:
 WSCC = WeightedElementsCollectionCache
 
 
-# definition of common syllable building blocks
-_first_place_consonants = list("bcdfghkmpsz") + ["ch"]
-_second_place_consonants = list("lnrtv")
-_solo_consonants = list("jxqw")
-_vowel_like_consonants = list("lr")
-_vowels = list("aeiouy")
-_vowel_pairs = ["ae", "ia", "ie", "iu", "oo", "uo"]
-
-
-# possible syllable patterns with their probabilities:
-# 1 = consonant that can stand on the first place in a pair of consonants
-# 2 = consonant that can stand on the second place in a pair of consonants
-# c = any cosonant
-# l = consonants that can act like a vowel under some special circumstances
-# p = vowel pair
-# v = vowel
-_syllable_patterns = (
-    ("12v", 20),   # e.g. MNA
-    ("12vc", 1),   # e.g. MRAZ
-    ("1l1", 1),    # e.g. MRZ
-    ("cv", 100),   # e.g. PA
-    ("cvc", 20),   # e.g. PAN
-    ("cp", 10),    # e.g. PIE
-    ("cpc", 3),    # e.g. PIEN
-    ("v", 10),     # e.g. A
-    ("vc", 15),    # e.g. AP
-    ("vlc", 5)     # e.g. ARP
-)
-
-
-# some additional configurations
-_duplicable_consonants = list("bdfklmnprst")  # there letters can follow
-                                              # themselves inside words
-
+# how many syllables can word consist of
 _word_lengths = (
     (1, 20),
     (2, 80),
     (3, 50),
     (4, 2),
     (5, 1),
-)  # how many syllables can word consist of
+)
+
+
+# how many words can sentence consist of
+_sentence_lengths = (
+    (1, 1),
+    (2, 3),
+    (3, 20),
+    (4, 25),
+    (5, 70),
+    (6, 40),
+    (7, 10),
+    (8, 3),
+    (9, 1),
+    (10, 1)
+)
+
+
+# word building blocks and their probabilities (loosely inspired by frequencies
+# of letters in English)
+_vowels = (
+    ("a", 85),
+    ("e", 112),
+    ("i", 75),
+    ("o", 72),
+    ("u", 36),
+    ("y", 1)
+)
+_vowel_pairs = (
+    ("ae", 40),
+    ("ia", 20),
+    ("ie", 20),
+    ("iu", 20),
+    ("ea", 30),
+    ("ei", 10),
+    ("eu", 1),
+    ("oo", 5),
+)
+_consonants = (
+    ("b", 21),
+    ("c", 15),
+    ("d", 34),
+    ("f", 18),
+    ("g", 5),
+    ("gl", 15),
+    ("gr", 15),
+    ("h", 15),
+    ("ch", 45),
+    ("chr", 5),
+    ("chl", 5),
+    ("j", 1),
+    ("k", 11),
+    ("l", 55),
+    ("m", 30),
+    ("n", 67),
+    ("p", 32),
+    ("qu", 5),
+    ("r", 75),
+    ("s", 30),
+    ("sh", 20),
+    ("sk", 20),
+    ("sp", 20),
+    ("st", 20),
+    ("t", 40),
+    ("th", 15),
+    ("tr", 25),
+    ("tl", 15),
+    ("v", 10),
+    ("w", 10),
+    ("wh", 15),
+    ("wr", 20),
+    ("wl", 20),
+    ("x", 3),
+    ("z", 1)
+)
+_ending_only_consonants = (
+    ("ck", 15),
+    ("sh", 15) 
+) + tuple(c for c in _consonants if len(c[0]) == 1 and c[0] not in "xz")
+
+
+# these letters can follow themselves inside words 
+_duplicable_consonants = list("bdfklmnprst")
+
+
+# possible syllable patterns with their probabilities:
+# c = consonant
+# e = ending only consonant
+# p = vowel pair
+# v = vowel
+_syllable_patterns = (
+    ("cv", 100),   # e.g. PA
+    ("cve", 20),   # e.g. PAN
+    ("cp", 10),    # e.g. PIE
+    ("cpe", 1),    # e.g. PIEN
+    ("v", 10),     # e.g. A
+    ("ve", 15)     # e.g. AP
+)
 
 
 class PatternError(Exception):
@@ -90,34 +154,20 @@ class PatternError(Exception):
         """
 
 
-def _get_1():
-    return random.choice(_first_place_consonants)
-
-
-def _get_2():
-    return random.choice(_second_place_consonants)
-
-
 def _get_c():
-    _chosen_list = random.choices(
-                       population = [_first_place_consonants,
-                                     _second_place_consonants,
-                                     _solo_consonants],
-                       weights = [40, 5, 1]
-                   ).pop()
-    return random.choice(_chosen_list)
+    return WSCC.get_random_element(_consonants)
 
 
-def _get_l():
-    return random.choice(_vowel_like_consonants)
+def _get_e():
+    return WSCC.get_random_element(_ending_only_consonants)
 
 
 def _get_p():
-    return random.choice(_vowel_pairs)
+    return WSCC.get_random_element(_vowel_pairs)
 
 
 def _get_v():
-    return random.choice(_vowels)
+    return WSCC.get_random_element(_vowels)
 
 
 def get_letter(pattern_symbol: str) -> str:
@@ -131,10 +181,8 @@ def get_letter(pattern_symbol: str) -> str:
     except KeyError:
         raise PatternError(f"Not a valid pattern symbol: '{pattern_symbol}'") 
 get_letter.pattern_mapping = {
-    "1": _get_1,
-    "2": _get_2,
     "c": _get_c,
-    "l": _get_l,
+    "e": _get_e,
     "p": _get_p,
     "v": _get_v
 }
@@ -172,14 +220,15 @@ def get_syllable() -> str:
     syllable = _generate_syllable(pattern)
     while (syllable[0] == last_letter
            and last_letter not in _duplicable_consonants
-           and pattern[1] not in "pv"):
+           and pattern[1] in "ce"):
         # repeat in case of not allowed letter duplication
         syllable = _generate_syllable(pattern)
 
     # save metadata about last generated vowel in the function object
-    get_syllable.can_start_with_vowel = syllable[-1] not in _vowels
-    get_syllable.can_start_with_consonant = (syllable[-1] in _vowels
-                                             or syllable[-2] in _vowels)
+    get_syllable.can_start_with_vowel = (syllable[-1] not in
+                                         WSCC.get_population(_vowels))
+    get_syllable.can_start_with_consonant = (syllable[-1] in WSCC.get_population(_vowels)
+                                             or syllable[-2] in WSCC.get_population(_vowels))
     get_syllable.last_letter = syllable[-1]
     return syllable
 
@@ -201,10 +250,7 @@ def get_sentence() -> str:
     """
     generates sentence by joining random number of words
     """
-    number_of_words = random.choices(
-                          population=[1, 2, 3,  4,  5,  6,  7,  8, 9, 10],
-                          weights=   [1, 3, 20, 25, 70, 40, 10, 3, 1, 1 ]
-                      ).pop()
+    number_of_words = WSCC.get_random_element(_sentence_lengths) 
     list_of_words = [get_word() for _ in range(number_of_words)]
 
     # capitalize the first word of sentence
