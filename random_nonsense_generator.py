@@ -66,6 +66,17 @@ _sentence_lengths = (
 )
 
 
+# how will the sentence end
+_sentence_endings = (
+    (".", 120),
+    ("?", 20),
+    ("!", 10),
+    ("...", 5),
+    ("?!", 3),
+    ("!!!", 1)
+)
+
+
 # word building blocks and their probabilities (loosely inspired by frequencies
 # of letters in English)
 _vowels = (
@@ -246,34 +257,24 @@ def get_word() -> str:
     return "".join(get_syllable() for _ in range(number_of_syllables))
 
 
-def get_sentence() -> str:
+def get_list_of_words() -> list[str]:
     """
-    generates sentence by joining random number of words
+    generates random number of words
     """
     number_of_words = WSCC.get_random_element(_sentence_lengths) 
-    list_of_words = [get_word() for _ in range(number_of_words)]
+    return [get_word() for _ in range(number_of_words)]
 
-    # capitalize the first word of sentence
-    list_of_words[0] = list_of_words[0].title()
 
-    # insert comma (or not)
-    if number_of_words > 3:
-        # after first word, use 30% chance
-        if random.choice(range(0, 3)) == 1:
-            list_of_words[0] += ","
+def get_sentence() -> str:
+    """
+    generates sentence by obtaining list of words, manipulating words in that
+    list and joining the list
+    """
+    # TODO add modes: names, numbers instead of word brackets, dates, subsentences...
 
-        # for the rest of the words, let there be a 5% chance of comma after the word
-        for i in range(min(5, number_of_words), number_of_words-1):
-            if random.choice(range(0, 20)) == 1:
-                list_of_words[i] += ","
-
-    # add interpunction to the end of the sentence
-    list_of_words[-1] += random.choices(
-                             population=['.', '?', '!', '...', '?!'],
-                             weights=   [85,  15,  5,   3,     1   ]
-                         ).pop()
-
-    return " ".join(list_of_words)
+    list_of_words = get_list_of_words()
+    ending = WSCC.get_random_element(_sentence_endings)
+    return " ".join(list_of_words).capitalize() + ending
 
 
 def main() -> None:
